@@ -14,6 +14,7 @@ spec:
       labels:
         app: actual
     spec:
+      enableServiceLinks: false
       initContainers:
         # Actual only works over HTTPS (except on localhost). On first start,
         # create a self-signed certificate on the data volume. Nothing secret
