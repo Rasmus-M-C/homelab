@@ -1,0 +1,12 @@
+# Applied to all nodes. Lets local-path-provisioner store volumes on the
+# node's disk under /var/local-path-provisioner.
+machine:
+  kubelet:
+    extraMounts:
+      - destination: /var/local-path-provisioner
+        type: bind
+        source: /var/local-path-provisioner
+        options:
+          - bind
+          - rshared
+          - rw

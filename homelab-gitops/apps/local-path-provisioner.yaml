@@ -1,0 +1,19 @@
+# Storage: lets apps request disk space (PersistentVolumeClaims) on the nodes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-path-provisioner
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Rasmus-M-C/homelab.git
+    targetRevision: main
+    path: homelab-gitops/manifests/local-path-provisioner
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: local-path-storage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
