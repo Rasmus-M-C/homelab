@@ -1,0 +1,3 @@
+# Control plane only. With just two nodes, let the control plane run workloads too.
+cluster:
+  allowSchedulingOnControlPlanes: true

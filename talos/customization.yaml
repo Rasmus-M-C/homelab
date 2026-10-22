@@ -1,0 +1,6 @@
+customization:
+  extraKernelArgs:
+    - net.ifnames=0 # interface is called eth0
+  systemExtensions:
+    officialExtensions:
+      - siderolabs/qemu-guest-agent

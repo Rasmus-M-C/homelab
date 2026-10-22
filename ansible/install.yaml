@@ -1,0 +1,85 @@
+# Same steps as bootstrap.ps1, following the itguyjournals guide.
+# Run on Linux (a Proxmox host or WSL) with ansible, talosctl, curl and jq:
+#   cd ansible && ansible-playbook install.yaml
+# NOT idempotent: run once per cluster.
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    cluster_name: "homelab"
+    talos_version: "v1.13.3"
+    output_directory: "./rendered"
+    talos_configuration_location: "rendered/talosconfig"
+    talos_control_ip: "192.168.1.80"
+    talos_control_ips:
+      - "192.168.1.80"
+    talos_worker_ips:
+      - "192.168.1.90"
+
+  tasks:
+    - name: Get Image Factory schematic ID (adds the QEMU guest agent)
+      shell: >
+        curl -sf -X POST --data-binary @../talos/customization.yaml
+        https://factory.talos.dev/schematics | jq -r '.id'
+      register: image_id
+
+    - name: Set installer image
+      set_fact:
+        install_image: "factory.talos.dev/metal-installer/{{ image_id.stdout }}:{{ talos_version }}"
+
+    - name: Check if secrets file exists
+      stat:
+        path: "secrets.yaml"
+      register: secrets
+
+    - name: Generate cluster secrets
+      command: talosctl gen secrets -o secrets.yaml
+      when: not secrets.stat.exists
+
+    - name: Generate machine configs
+      command: >
+        talosctl gen config --force {{ cluster_name }}
+        "https://{{ talos_control_ip }}:6443"
+        --with-secrets secrets.yaml
+        --install-image {{ install_image }}
+        --config-patch @../talos/patches/common.yaml
+        --config-patch @../talos/patches/proxmox-machine.yaml
+        --config-patch-control-plane @../talos/patches/control.yaml
+        --output {{ output_directory }}/
+
+    - name: Point talosconfig at the control plane
+      command: >
+        talosctl --talosconfig {{ talos_configuration_location }}
+        config endpoint {{ talos_control_ip }}
+
+    - name: Apply config to control nodes
+      command: >
+        talosctl apply-config --insecure
+        -f {{ output_directory }}/controlplane.yaml -n {{ item }}
+      loop: "{{ talos_control_ips }}"
+
+    - name: Apply config to worker nodes
+      command: >
+        talosctl apply-config --insecure
+        -f {{ output_directory }}/worker.yaml -n {{ item }}
+      loop: "{{ talos_worker_ips }}"
+
+    - name: Bootstrap etcd (retries while the node installs and reboots)
+      command: >
+        talosctl --talosconfig {{ talos_configuration_location }}
+        bootstrap -n {{ talos_control_ip }} -e {{ talos_control_ip }}
+      register: bootstrap
+      until: bootstrap.rc == 0
+      retries: 40
+      delay: 15
+
+    - name: Wait for the cluster to be healthy
+      command: >
+        talosctl --talosconfig {{ talos_configuration_location }}
+        health -n {{ talos_control_ip }} --wait-timeout 15m
+
+    - name: Retrieve kubeconfig
+      command: >
+        talosctl --talosconfig {{ talos_configuration_location }}
+        kubeconfig {{ output_directory }}/kubeconfig
+        -n {{ talos_control_ip }} -e {{ talos_control_ip }} --force

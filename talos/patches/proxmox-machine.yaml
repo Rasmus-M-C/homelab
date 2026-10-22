@@ -1,0 +1,4 @@
+# Proxmox VMs expose the virtual SCSI disk as /dev/sda.
+machine:
+  install:
+    disk: /dev/sda
