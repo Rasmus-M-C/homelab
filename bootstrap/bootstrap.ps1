@@ -59,7 +59,6 @@ Invoke-Talos gen config $ClusterName "https://${ControlIp}:6443" `
   --config-patch "@$TalosDir/patches/proxmox-machine.yaml" `
   --config-patch "@$TalosDir/patches/cilium.yaml" `
   --config-patch-control-plane "@$TalosDir/patches/control.yaml" `
-  --config-patch "@$TalosDir/patches/cilium.yaml" `
   --output $Out --force
 
 Invoke-Talos --talosconfig $TalosConfig config endpoint $ControlIp

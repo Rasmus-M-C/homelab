@@ -1,28 +1,8 @@
-# Cilium itself. Installed first by bootstrap.ps1; Argo CD adopts it from here.
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: cilium
-  namespace: argocd
-spec:
-  project: default
-  sources:
-    - repoURL: https://helm.cilium.io
-      chart: cilium
-      targetRevision: 1.20.3 # keep in sync with $CiliumVersion in bootstrap.ps1
-      helm:
-        releaseName: cilium
-        valueFiles:
-          - $values/manifests/cilium/values.yaml
-    - repoURL: https://github.com/YOUR-USER/homelab-gitops.git
-      targetRevision: main
-      ref: values # makes "$values" above point at this repo
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kube-system
-  syncPolicy:
-    automated:
-      prune: false # never auto-delete parts of the cluster network
-      selfHeal: true
-    syncOptions:
-      - ServerSideApply=true
+# Applied to all nodes. Don't install Talos' default CNI (Flannel) or
+# kube-proxy: Cilium replaces both. bootstrap.ps1 installs Cilium.
+cluster:
+  network:
+    cni:
+      name: none
+  proxy:
+    disabled: true
