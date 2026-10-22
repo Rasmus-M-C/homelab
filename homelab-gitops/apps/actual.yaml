@@ -1,0 +1,21 @@
+# Actual Budget: personal finance / budgeting app.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: actual
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Rasmus-M-C/homelab.git
+    targetRevision: main
+    path: homelab-gitops/manifests/actual
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: actual
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

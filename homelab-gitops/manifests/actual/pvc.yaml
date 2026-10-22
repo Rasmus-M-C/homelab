@@ -1,0 +1,11 @@
+# Budget files, server settings and the HTTPS certificate.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: actual-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

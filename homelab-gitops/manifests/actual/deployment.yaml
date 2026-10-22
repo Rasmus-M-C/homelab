@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: actual
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # the volume can only be used by one pod at a time
+  selector:
+    matchLabels:
+      app: actual
+  template:
+    metadata:
+      labels:
+        app: actual
+    spec:
+      initContainers:
+        # Actual only works over HTTPS (except on localhost). On first start,
+        # create a self-signed certificate on the data volume. Nothing secret
+        # ends up in Git. Keep the IP in sync with service.yaml.
+        - name: create-cert
+          image: alpine:3.20
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -f /data/certs/cert.pem ]; then
+                apk add --no-cache openssl
+                mkdir -p /data/certs
+                openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+                  -keyout /data/certs/key.pem -out /data/certs/cert.pem \
+                  -subj "/CN=actual" -addext "subjectAltName=IP:192.168.50.211"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      containers:
+        - name: actual
+          image: actualbudget/actual-server:26.10.0
+          env:
+            - name: ACTUAL_HTTPS_KEY
+              value: /data/certs/key.pem
+            - name: ACTUAL_HTTPS_CERT
+              value: /data/certs/cert.pem
+          ports:
+            - containerPort: 5006
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: actual-data

@@ -1,0 +1,15 @@
+# Open https://192.168.50.211 in the browser.
+apiVersion: v1
+kind: Service
+metadata:
+  name: actual
+  annotations:
+    lbipam.cilium.io/ips: "192.168.50.211" # <- keep in sync with the cert in deployment.yaml
+spec:
+  type: LoadBalancer
+  selector:
+    app: actual
+  ports:
+    - name: https
+      port: 443
+      targetPort: 5006
