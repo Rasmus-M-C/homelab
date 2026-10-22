@@ -1,0 +1,3 @@
+# Gives the Argo CD UI its own IP from the Cilium pool (applied once with kubectl patch).
+spec:
+  type: LoadBalancer

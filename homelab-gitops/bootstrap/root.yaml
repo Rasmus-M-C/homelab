@@ -1,0 +1,21 @@
+# The only thing applied by hand (once): kubectl apply -f bootstrap/root.yaml
+# It tells Argo CD to watch the apps/ folder. Every Application in apps/ is
+# then created and kept in sync automatically ("app of apps").
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Rasmus-M-C/homelab.git
+    targetRevision: main
+    path: homelab-gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true    # deleting a file in apps/ removes that app
+      selfHeal: true # manual changes in the cluster are reverted to what Git says

@@ -1,0 +1,21 @@
+# Example app, to prove the whole flow works. Delete this file to remove it.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Rasmus-M-C/homelab.git
+    targetRevision: main
+    path: homelab-gitops/manifests/hello
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: hello
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

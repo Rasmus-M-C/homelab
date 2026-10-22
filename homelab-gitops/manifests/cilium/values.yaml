@@ -1,0 +1,32 @@
+# Cilium Helm values. Used twice, so the two always match:
+#  - bootstrap.ps1 installs Cilium with these right after the cluster is created
+#    (nodes have no network until a CNI exists, so Argo CD can't do this part)
+#  - apps/cilium.yaml then lets Argo CD take over and manage it from Git
+
+# Talos-specific settings (from the Talos Cilium guide)
+ipam:
+  mode: kubernetes
+kubeProxyReplacement: true # replaces kube-proxy, which is disabled in Talos
+k8sServiceHost: localhost  # KubePrism: Talos' local API server proxy
+k8sServicePort: 7445
+securityContext:
+  capabilities:
+    ciliumAgent: [CHOWN, KILL, NET_ADMIN, NET_RAW, IPC_LOCK, SYS_ADMIN, SYS_RESOURCE, DAC_OVERRIDE, FOWNER, SETGID, SETUID]
+    cleanCiliumState: [NET_ADMIN, SYS_ADMIN, SYS_RESOURCE]
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup
+
+# LoadBalancer IPs on the LAN (replaces MetalLB). Pool + policy are in manifests/cilium-config.
+l2announcements:
+  enabled: true
+k8sClientRateLimit: # L2 announcements use leases; the default limits are too low
+  qps: 20
+  burst: 40
+
+# Kept small for a two-node homelab
+operator:
+  replicas: 1
+hubble:
+  enabled: false # observability UI; can be turned on later
