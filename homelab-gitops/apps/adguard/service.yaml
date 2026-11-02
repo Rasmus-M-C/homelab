@@ -1,0 +1,29 @@
+# One fixed IP for both DNS and the web UI. Point your router's DNS here.
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard
+  annotations:
+    lbipam.cilium.io/ips: "192.168.50.210" # <- fixed IP from the Cilium pool
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local # AdGuard sees real client IPs, not node IPs
+  selector:
+    app: adguard
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+    - name: setup # first-run setup wizard
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+    - name: http # web UI after setup
+      port: 80
+      targetPort: 80
+      protocol: TCP

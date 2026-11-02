@@ -1,0 +1,104 @@
+# Cluster-wide building blocks. Flux applies these before the apps.
+# Paths are relative to the root of the homelab repo.
+
+# Cilium: the cluster network. Installed first by bootstrap.ps1, then managed here.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium
+  namespace: flux-system
+spec:
+  interval: 30m
+  path: ./homelab-gitops/infrastructure/cilium
+  prune: false # never remove the cluster network because a file went missing
+  wait: true
+  timeout: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+# LoadBalancer IP pool + L2 announcements. Needs Cilium's CRDs.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cilium-config
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cilium
+  interval: 30m
+  path: ./homelab-gitops/infrastructure/cilium-config
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+# Storage: upstream local-path-provisioner, adjusted for Talos.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: local-path-provisioner
+  namespace: flux-system
+spec:
+  interval: 24h
+  url: https://github.com/rancher/local-path-provisioner
+  ref:
+    tag: v0.0.37
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: local-path
+  namespace: flux-system
+spec:
+  interval: 30m
+  path: ./deploy
+  prune: true
+  wait: true
+  sourceRef:
+    kind: GitRepository
+    name: local-path-provisioner
+  patches:
+    # Store volumes where Talos allows it (see talos/patches/local-path.yaml)
+    - target:
+        kind: ConfigMap
+        name: local-path-config
+      patch: |-
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: local-path-config
+          namespace: local-path-storage
+        data:
+          config.json: |-
+            {
+              "nodePathMap": [
+                {
+                  "node": "DEFAULT_PATH_FOR_NON_LISTED_NODES",
+                  "paths": ["/var/local-path-provisioner"]
+                }
+              ]
+            }
+    # Make it the default storage class
+    - target:
+        kind: StorageClass
+        name: local-path
+      patch: |-
+        apiVersion: storage.k8s.io/v1
+        kind: StorageClass
+        metadata:
+          name: local-path
+          annotations:
+            storageclass.kubernetes.io/is-default-class: "true"
+    # Its helper pods use host paths, which Talos' default pod security blocks
+    - target:
+        kind: Namespace
+        name: local-path-storage
+      patch: |-
+        apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: local-path-storage
+          labels:
+            pod-security.kubernetes.io/enforce: privileged

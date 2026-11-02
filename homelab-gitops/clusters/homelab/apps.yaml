@@ -1,0 +1,55 @@
+# Your apps. One Flux Kustomization per folder in homelab-gitops/apps.
+# To add an app: create apps/<name>/ and add a block like these.
+
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: adguard
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: local-path    # needs storage
+    - name: cilium-config # needs a LoadBalancer IP
+  interval: 10m
+  path: ./homelab-gitops/apps/adguard
+  prune: true
+  wait: true
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: actual
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: local-path
+    - name: cilium-config
+  interval: 10m
+  path: ./homelab-gitops/apps/actual
+  prune: true
+  wait: true
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: hello
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: cilium-config
+  interval: 10m
+  path: ./homelab-gitops/apps/hello
+  prune: true
+  wait: true
+  timeout: 5m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

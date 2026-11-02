@@ -1,0 +1,20 @@
+# Same release name and namespace as bootstrap.ps1's "helm install", so Flux
+# takes over that installation instead of creating a second one.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cilium
+spec:
+  releaseName: cilium
+  interval: 30m
+  chart:
+    spec:
+      chart: cilium
+      version: 1.20.3 # keep in sync with $CiliumVersion in bootstrap.ps1
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+  valuesFrom:
+    - kind: ConfigMap
+      name: cilium-values
+      valuesKey: values.yaml

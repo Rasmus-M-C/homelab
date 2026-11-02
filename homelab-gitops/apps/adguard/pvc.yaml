@@ -1,0 +1,11 @@
+# Keeps AdGuard's settings (conf) and query logs/stats (work) across restarts.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: adguard-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

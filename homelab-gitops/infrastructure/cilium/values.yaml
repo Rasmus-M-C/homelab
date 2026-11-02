@@ -1,7 +1,7 @@
 # Cilium Helm values. Used twice, so the two always match:
 #  - bootstrap.ps1 installs Cilium with these right after the cluster is created
-#    (nodes have no network until a CNI exists, so Argo CD can't do this part)
-#  - apps/cilium.yaml then lets Argo CD take over and manage it from Git
+#    (nodes have no network until a CNI exists, so Flux can't do this part)
+#  - the Flux HelmRelease in this folder then manages it from Git
 
 # Talos-specific settings (from the Talos Cilium guide)
 ipam:

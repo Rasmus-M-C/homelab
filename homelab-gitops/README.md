@@ -1,16 +1,17 @@
-# homelab-gitops (folder in the homelab repo)
+# homelab-gitops (Flux)
 
-Everything in this repo is deployed to the cluster by Argo CD.
+Flux keeps the cluster in sync with this folder.
 
 ```
-bootstrap/   applied by hand once (root app, Argo CD UI service patch, repo secret)
-apps/        one Argo CD Application per app; root app watches this folder
-manifests/   plain Kubernetes YAML that some of those Applications point to
+clusters/homelab/   entry point Flux watches
+  flux-system/      created by `flux bootstrap`, don't edit
+  infrastructure.yaml   cilium, cilium-config, local-path
+  apps.yaml             one block per app
+infrastructure/     cluster building blocks
+apps/<name>/        one folder per app (incl. namespace.yaml + kustomization.yaml)
 ```
 
-## Adding an app
-1. Put its manifests in `manifests/<name>/` (or point at a Helm chart, like `apps/cilium.yaml`).
-2. Add `apps/<name>.yaml`.
-3. Commit and push. Argo CD picks it up within ~3 minutes.
-
-Removing a file from `apps/` removes that app from the cluster.
+## Add an app
+1. Create `apps/<name>/` with its manifests, a `namespace.yaml` and a `kustomization.yaml` listing them.
+2. Add a block for it to `clusters/homelab/apps.yaml`.
+3. Commit and push. `flux reconcile kustomization flux-system --with-source` applies it immediately.

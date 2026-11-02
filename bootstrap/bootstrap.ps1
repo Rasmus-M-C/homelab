@@ -4,22 +4,22 @@
 # Expects this layout:
 #   <somewhere>\homelab\bootstrap\bootstrap.ps1   (this file)
 #   <somewhere>\homelab\talos\...
-#   <somewhere>\homelab-gitops\manifests\cilium\values.yaml
+#   <somewhere>\homelab\homelab-gitops\infrastructure\cilium\values.yaml
 
 $ClusterName   = "homelab"
 $TalosVersion  = "v1.13.3"
-$CiliumVersion = "1.20.3"             # keep in sync with apps/cilium.yaml in homelab-gitops
+$CiliumVersion = "1.20.3"             # keep in sync with homelab-gitops/infrastructure/cilium/helmrelease.yaml
 $ControlIp     = "192.168.50.49"      # <- control plane VM IP
-$WorkerIps     = @("192.168.50.51")   # <- worker VM IP(s)
+$WorkerIps     = @("192.168.50.xx")   # <- worker VM IP(s)
 
 # All paths are relative to this script, so it works from any folder.
 $TalosDir     = "$PSScriptRoot/../talos"
-$CiliumValues = "$PSScriptRoot/../../homelab-gitops/manifests/cilium/values.yaml"
+$CiliumValues = "$PSScriptRoot/../homelab-gitops/infrastructure/cilium/values.yaml"
 $Secrets      = "$PSScriptRoot/secrets.yaml"
 $Out          = "$PSScriptRoot/rendered"
 $TalosConfig  = "$Out/talosconfig"
 $KubeConfig   = "$Out/kubeconfig"
-$CiliumValues = "$PSScriptRoot/../homelab-gitops/manifests/cilium/values.yaml"
+
 function Invoke-Talos {
   & talosctl @args
   if ($LASTEXITCODE -ne 0) { throw "talosctl $($args -join ' ') failed" }

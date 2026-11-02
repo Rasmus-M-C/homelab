@@ -14,6 +14,9 @@ spec:
       labels:
         app: actual
     spec:
+      # Kubernetes normally adds env vars for every Service in the namespace.
+      # For a Service named "actual" that includes ACTUAL_PORT=tcp://...:443,
+      # which Actual reads as its own port setting and crashes. Turn that off.
       enableServiceLinks: false
       initContainers:
         # Actual only works over HTTPS (except on localhost). On first start,
